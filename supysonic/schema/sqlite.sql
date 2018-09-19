@@ -110,6 +110,12 @@ CREATE TABLE IF NOT EXISTS rating_track (
     PRIMARY KEY (user_id, rated_id)
 );
 
+CREATE TABLE IF NOT EXISTS track_extra_meta_data (
+    track_id CHAR(36) NOT NULL REFERENCES track,
+    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+    PRIMARY KEY (track_id)
+);
+
 CREATE TABLE IF NOT EXISTS chat_message (
     id CHAR(36) PRIMARY KEY,
     user_id CHAR(36) NOT NULL REFERENCES user,
