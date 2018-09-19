@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS track (
     play_count INTEGER NOT NULL,
     last_play DATETIME,
     root_folder_id CHAR(36) NOT NULL REFERENCES folder,
-    folder_id CHAR(36) NOT NULL REFERENCES folder
+    folder_id CHAR(36) NOT NULL REFERENCES folder,
+    meta_rating INTEGER CHECK(rating BETWEEN 1 AND 5)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS index_track_path ON track(path_hash);
@@ -108,12 +109,6 @@ CREATE TABLE IF NOT EXISTS rating_track (
     rated_id CHAR(36) NOT NULL REFERENCES track,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
-);
-
-CREATE TABLE IF NOT EXISTS track_extra_meta_data (
-    track_id CHAR(36) NOT NULL REFERENCES track,
-    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
-    PRIMARY KEY (track_id)
 );
 
 CREATE TABLE IF NOT EXISTS chat_message (

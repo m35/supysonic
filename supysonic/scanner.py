@@ -17,7 +17,7 @@ from pony.orm import db_session
 from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from .db import RatingFolder, RatingTrack, TrackExtraMetaData
+from .db import RatingFolder, RatingTrack
 from .py23 import strtype
 
 class StatsDetails(object):
@@ -145,6 +145,9 @@ class Scanner:
         trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
         trdict['last_modification'] = int(os.path.getmtime(path))
 
+        tralbum = self.__find_album(albumartist, album)
+        trartist = self.__find_artist(artist)
+
         RATING_STEPS = 5
         # https://github.com/metabrainz/picard/blob/master/picard/formats/asf.py
         # Rating in WMA ranges from 0 to 99, normalize this to the range 0 to 5
@@ -165,13 +168,15 @@ class Scanner:
 
         first_rating = next((item for item in [rating_wma, rating_id3, rating_vorbis]] if item is not None), None)
 
+        trdict['meta_rating'] = first_rating
+
         if tr is None:
             trdict['root_folder'] = self.__find_root_folder(path)
             trdict['folder'] = self.__find_folder(path)
             trdict['album'] = tralbum
             trdict['artist'] = trartist
 
-            tr = Track(**trdict)
+            Track(**trdict)
             self.__stats.added.tracks += 1
         else:
             if tr.album.id != tralbum.id:
@@ -181,9 +186,6 @@ class Scanner:
                 trdict['artist'] = trartist
 
             tr.set(**trdict)
-
-        if first_rating is not None: # wait, update the existing metaata if track exists
-            TrackExtraMetaData(tr.id, first_rating)
 
     @db_session
     def remove_file(self, path):

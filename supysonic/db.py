@@ -231,7 +231,6 @@ class Track(PathMixin, db.Entity):
 
     stars = Set(lambda: StarredTrack)
     ratings = Set(lambda: RatingTrack)
-    extra_meta_data = Set(lambda: TrackExtraMetaData)
 
     def as_subsonic_child(self, user, prefs):
         info = dict(
@@ -272,13 +271,9 @@ class Track(PathMixin, db.Entity):
             rating = RatingTrack[user.id, self.id]
             info['userRating'] = rating.rating
         except ObjectNotFound:
-            try:
-                rating = TrackExtraMetaData[self.id]
-                info['userRating'] = rating.rating
-            except ObjectNotFound: pass
+            rating = self.meta_rating
 
         # TODO take metadata rating, overwrite user rating, take avg
-        metaAgRating = avg(self.extra_meta_data.rating)
         avgRating = avg(self.ratings.rating)
         if avgRating:
             info['averageRating'] = avgRating
@@ -325,7 +320,8 @@ class User(db.Entity):
     starred_albums =  Set(lambda: StarredAlbum,  lazy = True)
     starred_tracks =  Set(lambda: StarredTrack,  lazy = True)
     folder_ratings =  Set(lambda: RatingFolder,  lazy = True)
-    #track_ratings =   Set(lambda: RatingTrack,   lazy = True)
+    # This is not actually be used, and it might conflict with the meta rating logic
+    # track_ratings =   Set(lambda: RatingTrack,   lazy = True)
 
     def as_subsonic_user(self):
         return dict(
@@ -405,11 +401,6 @@ class RatingTrack(db.Entity):
     rating = Required(int, min = 1, max = 5)
 
     PrimaryKey(user, rated)
-
-class TrackExtraMetaData(db.Entity):
-    _table_ = 'track_extra_meta_data'
-    track_id = PrimaryKey(Track, column = 'id')
-    rating = Required(int, min = 1, max = 5)
 
 class ChatMessage(db.Entity):
     _table_ = 'chat_message'
