@@ -408,10 +408,8 @@ class RatingTrack(db.Entity):
 
 class TrackExtraMetaData(db.Entity):
     _table_ = 'track_extra_meta_data'
-    track = Required(Track, column = 'id')
+    track_id = PrimaryKey(Track, column = 'id')
     rating = Required(int, min = 1, max = 5)
-
-    PrimaryKey(track)
 
 class ChatMessage(db.Entity):
     _table_ = 'chat_message'

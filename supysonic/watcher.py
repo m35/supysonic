@@ -11,7 +11,7 @@ import logging
 import os.path
 import time
 
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, FileHandler
 from pony.orm import db_session
 from signal import signal, SIGTERM, SIGINT
 from threading import Thread, Condition, Timer
@@ -254,7 +254,11 @@ class SupysonicWatcher(object):
     def run(self):
         logger = logging.getLogger(__name__)
         if self.__config.DAEMON['log_file']:
-            log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
+            # hack to check for stdout/stderr
+            if self.__config.DAEMON['log_file'].startswith('/dev/std'):
+                log_handler = FileHandler(self.__config.DAEMON['log_file'])
+            else:
+                log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
         else:
             log_handler = logging.NullHandler()
         log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
