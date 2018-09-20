@@ -33,8 +33,9 @@ class FolderManager:
         if Folder.get(name = name, root = True) is not None:
             raise ValueError("Folder '{}' exists".format(name))
 
-        path = os.path.abspath(path)
+        path = os.path.abspath(os.path.expanduser(path))
         if not os.path.isdir(path):
+            print(path)
             raise ValueError("The path doesn't exits or is'nt a directory")
         if Folder.get(path = path) is not None:
             raise ValueError('This path is already registered')

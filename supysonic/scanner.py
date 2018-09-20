@@ -166,9 +166,10 @@ class Scanner:
         rating_other1 = self.__try_read_tag(tag, 'RATING', None, lambda x: x)
         rating_other2 = self.__try_read_tag(tag, 'rate', None, lambda x: x)
 
-        first_rating = next((item for item in [rating_wma, rating_id3, rating_vorbis]] if item is not None), None)
+        first_rating = next((item for item in [rating_wma, rating_id3, rating_vorbis] if item is not None), None)
 
-        trdict['meta_rating'] = first_rating
+        if first_rating is not None:
+            trdict['meta_rating'] = first_rating
 
         if tr is None:
             trdict['root_folder'] = self.__find_root_folder(path)

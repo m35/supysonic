@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS track (
     last_play DATETIME,
     root_folder_id CHAR(36) NOT NULL REFERENCES folder,
     folder_id CHAR(36) NOT NULL REFERENCES folder,
-    meta_rating INTEGER CHECK(rating BETWEEN 1 AND 5)
+    meta_rating INTEGER CHECK(meta_rating BETWEEN 1 AND 5)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS index_track_path ON track(path_hash);

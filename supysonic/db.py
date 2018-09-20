@@ -228,6 +228,8 @@ class Track(PathMixin, db.Entity):
     root_folder = Required(Folder, column = 'root_folder_id')
     folder = Required(Folder, column = 'folder_id')
 
+    meta_rating = Optional(int, min = 1, max = 5)
+
     __lastly_played_by = Set(lambda: User) # Never used, hide it
 
     stars = Set(lambda: StarredTrack)
@@ -272,8 +274,11 @@ class Track(PathMixin, db.Entity):
             rating = RatingTrack[user.id, self.id]
             info['userRating'] = rating.rating
         except ObjectNotFound:
-            info['userRating'] = self.meta_rating
+            if self.meta_rating is not None:
+                info['userRating'] = self.meta_rating
 
+
+        # select avg(x) + count(y) * meta_rating
         # select avg(coalesce(rating, self.meta_rating)) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
         # avg_rating = avg(coalesce(self.ratings.rating, self.meta_rating))
         avg_rating = coalesce(avg(self.ratings.rating), self.meta_rating)
@@ -323,8 +328,7 @@ class User(db.Entity):
     starred_albums =  Set(lambda: StarredAlbum,  lazy = True)
     starred_tracks =  Set(lambda: StarredTrack,  lazy = True)
     folder_ratings =  Set(lambda: RatingFolder,  lazy = True)
-    # This is not actually be used, and it might conflict with the meta rating logic
-    # track_ratings =   Set(lambda: RatingTrack,   lazy = True)
+    track_ratings =   Set(lambda: RatingTrack,   lazy = True)
 
     def as_subsonic_user(self):
         return dict(
