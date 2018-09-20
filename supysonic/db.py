@@ -18,8 +18,8 @@ from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
-from pony.orm import min, max, avg, sum, exists
-from pony.orm import db_session
+from pony.orm import min, max, avg, sum, exists, coalesce
+from pony.orm import db_session, set_sql_debug
 from uuid import UUID, uuid4
 
 from .py23 import dict, strtype
@@ -34,6 +34,7 @@ SCHEMA_VERSION = '20180829'
 def now():
     return datetime.now().replace(microsecond = 0)
 
+set_sql_debug(True, True)
 metadb = Database()
 
 class Meta(metadb.Entity):
@@ -271,12 +272,22 @@ class Track(PathMixin, db.Entity):
             rating = RatingTrack[user.id, self.id]
             info['userRating'] = rating.rating
         except ObjectNotFound:
-            rating = self.meta_rating
+            info['userRating'] = self.meta_rating
 
         # TODO take metadata rating, overwrite user rating, take avg
-        avgRating = avg(self.ratings.rating)
-        if avgRating:
-            info['averageRating'] = avgRating
+        # # of users wout rating * meta_rating + 
+        coalesce(self.meta_rating)
+        rating_count = count(self.ratings.rating)
+
+        # select avg(rating) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
+        #avg_rating = avg(self.ratings.rating) 
+
+        # select avg(coalesce(rating, self.meta_rating)) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
+        # avg_rating = avg(coalesce(self.ratings.rating, self.meta_rating))
+        avg_rating = coalesce(avg(self.ratings.rating), self.meta_rating))
+
+        if avg_rating:
+            info['averageRating'] = avg_rating
 
         if prefs is not None and prefs.format is not None and prefs.format != self.suffix():
             info['transcodedSuffix'] = prefs.format
