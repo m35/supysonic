@@ -274,17 +274,9 @@ class Track(PathMixin, db.Entity):
         except ObjectNotFound:
             info['userRating'] = self.meta_rating
 
-        # TODO take metadata rating, overwrite user rating, take avg
-        # # of users wout rating * meta_rating + 
-        coalesce(self.meta_rating)
-        rating_count = count(self.ratings.rating)
-
-        # select avg(rating) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
-        #avg_rating = avg(self.ratings.rating) 
-
         # select avg(coalesce(rating, self.meta_rating)) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
         # avg_rating = avg(coalesce(self.ratings.rating, self.meta_rating))
-        avg_rating = coalesce(avg(self.ratings.rating), self.meta_rating))
+        avg_rating = coalesce(avg(self.ratings.rating), self.meta_rating)
 
         if avg_rating:
             info['averageRating'] = avg_rating
