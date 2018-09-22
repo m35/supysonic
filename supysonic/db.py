@@ -18,7 +18,7 @@ from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
-from pony.orm import min, max, avg, sum, exists, coalesce
+from pony.orm import min, max, avg, sum, count, exists, select
 from pony.orm import db_session, set_sql_debug
 from uuid import UUID, uuid4
 
@@ -274,17 +274,19 @@ class Track(PathMixin, db.Entity):
             rating = RatingTrack[user.id, self.id]
             info['userRating'] = rating.rating
         except ObjectNotFound:
+            # if the user hasn't rated this track, fall back to the track's meta rating
             if self.meta_rating is not None:
                 info['userRating'] = self.meta_rating
 
-
-        # select avg(x) + count(y) * meta_rating
-        # select avg(coalesce(rating, self.meta_rating)) from RatingTrack JOIN Track ON Track.id == RatingTrack.track_id
-        # avg_rating = avg(coalesce(self.ratings.rating, self.meta_rating))
-        avg_rating = coalesce(avg(self.ratings.rating), self.meta_rating)
-
-        if avg_rating:
-            info['averageRating'] = avg_rating
+        if self.meta_rating is None:
+            # if no meta rating, can just take the average of any ratings
+            info['averageRating'] = avg(self.ratings.value)
+        else:
+            user_count = User.select().count()
+            if user_count > 0:
+                # use this track's meta rating in place of users who have not rated this track
+                rated_sum, rated_count = select((sum(r.rating), count(r)) for r in self.ratings.select()).get()
+                info['averageRating'] = self.meta_rating + (rated_sum - self.meta_rating * rated_count) / user_count
 
         if prefs is not None and prefs.format is not None and prefs.format != self.suffix():
             info['transcodedSuffix'] = prefs.format
